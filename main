@@ -1,0 +1,39 @@
+from pykalman import KalmanFilter
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy import poly1d
+
+
+
+start = '2013-01-01'
+end = '2015-01-01'
+x = get_pricing('LMT', fields='price', start_date=start, end_date=end)
+
+# Construct a Kalman filter
+kf = KalmanFilter(transition_matrices = [1],
+                  observation_matrices = [1],
+                  initial_state_mean = 0,
+                  initial_state_covariance = 1,
+                  observation_covariance=1,
+                  transition_covariance=.01)
+
+# Use the observed values of the price to get a rolling mean
+state_means, _ = kf.filter(x.values)
+state_means = pd.Series(state_means.flatten(), index=x.index)
+
+# Compute the rolling mean with various lookback windows
+mean30 = pd.rolling_mean(x, 30)
+mean60 = pd.rolling_mean(x, 60)
+mean90 = pd.rolling_mean(x, 90)
+
+# Plot original data and estimated mean
+plt.plot(state_means)
+plt.plot(x)
+plt.plot(mean30)
+plt.plot(mean60)
+plt.plot(mean90)
+plt.title('Kalman filter estimate of average')
+plt.legend(['Kalman Estimate', 'X', '30-day Moving Average', '60-day Moving Average','90-day Moving Average'])
+plt.xlabel('Day')
+plt.ylabel('Price');
